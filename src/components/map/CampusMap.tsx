@@ -1,7 +1,7 @@
 "use client";
 
 import { MapContainer, TileLayer, Polygon, Marker, Tooltip, useMap } from "react-leaflet";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import L from "leaflet";
 import { IDepartment } from "@/types/department";
 import { RouteInfo } from "@/types/navigation";
@@ -10,6 +10,7 @@ import { UserLocationMarker } from "./UserLocationMarker";
 import { DestinationMarker } from "./DestinationMarker";
 import { RouteLayer } from "./RouteLayer";
 import { RoadPolyline } from "./RoadPolyline";
+import { Layers, Map as MapIcon, Globe } from "lucide-react";
 
 interface CampusMapProps {
   userLocation?: { latitude: number; longitude: number; accuracy?: number | null } | null;
@@ -48,9 +49,28 @@ const createLabelIcon = (name: string) => {
   });
 };
 
-const DEFAULT_CENTER: [number, number] = [11.101925, 77.025604]; // SNS College of Engineering (Autonomous), Coimbatore
-const TILE_URL =
-  process.env.NEXT_PUBLIC_MAP_TILE_URL || "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+const DEFAULT_CENTER: [number, number] = [11.1033, 77.0273]; // Centered on AI Campus Block
+
+export const TILE_SOURCES = {
+  osm: {
+    name: "OpenStreetMap",
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    icon: Globe,
+  },
+  google_streets: {
+    name: "Google Maps",
+    url: "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+    attribution: "&copy; Google Maps",
+    icon: MapIcon,
+  },
+  google_hybrid: {
+    name: "Google Satellite",
+    url: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+    attribution: "&copy; Google Maps Satellite",
+    icon: Layers,
+  },
+};
 
 export default function CampusMap({
   userLocation,
@@ -60,6 +80,8 @@ export default function CampusMap({
   mapObjects = [],
   className = "w-full h-full min-h-[400px]",
 }: CampusMapProps) {
+  const [activeTileSource, setActiveTileSource] = useState<keyof typeof TILE_SOURCES>("osm");
+
   // Determine center point based on selected department or default campus center
   const initialCenter: [number, number] = selectedDepartment
     ? [selectedDepartment.location.latitude, selectedDepartment.location.longitude]
@@ -71,6 +93,8 @@ export default function CampusMap({
   const campusPaths = mapObjects.filter(
     (o) => o.type === "path" && o.coordinates && o.coordinates.length >= 2
   );
+
+  const tileConfig = TILE_SOURCES[activeTileSource];
 
   return (
     <div
@@ -84,9 +108,10 @@ export default function CampusMap({
         style={{ height: "100%", width: "100%" }}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url={TILE_URL}
-          maxZoom={19}
+          key={activeTileSource}
+          attribution={tileConfig.attribution}
+          url={tileConfig.url}
+          maxZoom={20}
         />
 
         {/* Auto Recenter component if selected department changes */}
@@ -125,10 +150,10 @@ export default function CampusMap({
               <Polygon
                 positions={positions}
                 pathOptions={{
-                  color: "#3b82f6",
-                  fillColor: "#60a5fa",
-                  fillOpacity: 0.25,
-                  weight: 2,
+                  color: "#2563eb",
+                  fillColor: "#3b82f6",
+                  fillOpacity: 0.35,
+                  weight: 2.5,
                 }}
               >
                 <Tooltip permanent direction="top" opacity={0.95} className="font-bold text-xs">
@@ -159,11 +184,35 @@ export default function CampusMap({
           ))
         )}
 
-        {/* 5. Active Outdoor Student GPS Navigation Route Layer (Rendered on top with distinct stroke) */}
+        {/* 5. Active Outdoor Student GPS Navigation Route Layer */}
         {routeData && routeData.coordinates && routeData.coordinates.length > 0 && (
           <RouteLayer coordinates={routeData.coordinates} isFallback={routeData.isFallback} />
         )}
       </MapContainer>
+
+      {/* Floating Map Tile Provider Selector (Top-Right) */}
+      <div className="absolute top-3 right-3 z-[400] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-1.5 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 flex items-center gap-1">
+        {(Object.keys(TILE_SOURCES) as Array<keyof typeof TILE_SOURCES>).map((key) => {
+          const item = TILE_SOURCES[key];
+          const Icon = item.icon;
+          const isActive = activeTileSource === key;
+          return (
+            <button
+              key={key}
+              onClick={() => setActiveTileSource(key)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                isActive
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{item.name}</span>
+            </button>
+          );
+        })}
+      </div>
 
       {/* Map Attribution / Legend badge */}
       <div className="absolute bottom-3 left-3 z-[400] bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg text-[11px] font-medium text-slate-700 dark:text-slate-300 shadow-md border border-slate-200 dark:border-slate-800 flex items-center gap-3 flex-wrap">
@@ -176,6 +225,11 @@ export default function CampusMap({
         <span className="flex items-center gap-1">
           <span className="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block"></span> Room
         </span>
+        {buildings.length > 0 && (
+          <span className="flex items-center gap-1 font-bold text-slate-800 dark:text-slate-200">
+            🏢 Blocks ({buildings.length})
+          </span>
+        )}
         {campusPaths.length > 0 && (
           <span className="flex items-center gap-1 font-bold text-slate-800 dark:text-slate-200">
             🛣️ Roads/Paths ({campusPaths.length})

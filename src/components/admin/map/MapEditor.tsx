@@ -133,7 +133,7 @@ const draftVertexIcon = L.divIcon({
   iconAnchor: [7, 7],
 });
 
-const DEFAULT_CENTER: [number, number] = [11.101925, 77.025604];
+const DEFAULT_CENTER: [number, number] = [11.1033, 77.0273];
 const TILE_URL =
   process.env.NEXT_PUBLIC_MAP_TILE_URL || "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 

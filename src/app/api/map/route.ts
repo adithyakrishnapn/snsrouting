@@ -3,6 +3,7 @@ import { dbConnect } from "@/lib/mongodb";
 import CampusMapObject from "@/models/CampusMapObject";
 import { campusMapObjectSchema } from "@/lib/validations";
 import { requireAdminAuth } from "@/lib/auth";
+import { SEED_CAMPUS_MAP_OBJECTS } from "@/lib/seedMapObjects";
 
 // GET /api/map
 export async function GET(req: NextRequest) {
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
     const includeInactive = searchParams.get("all") === "true";
     const typeFilter = searchParams.get("type");
 
-    const query: Record<string, any> = {};
+    const query: Record<string, unknown> = {};
     if (!includeInactive) {
       query.isActive = true;
     }
@@ -20,19 +21,40 @@ export async function GET(req: NextRequest) {
       query.type = typeFilter;
     }
 
-    const objects = await CampusMapObject.find(query).sort({ name: 1 }).lean();
+    let objects = await CampusMapObject.find(query).sort({ name: 1 }).lean();
+
+    // Fallback to SEED_CAMPUS_MAP_OBJECTS if database is empty
+    if (!objects || objects.length === 0) {
+      const fallback = SEED_CAMPUS_MAP_OBJECTS.map((o, idx) => ({
+        ...o,
+        _id: `fallback-map-obj-${idx}`,
+      }));
+      return NextResponse.json({
+        success: true,
+        count: fallback.length,
+        data: fallback,
+      });
+    }
 
     return NextResponse.json({
       success: true,
       count: objects.length,
       data: objects,
     });
-  } catch (error: any) {
-    console.error("GET /api/map error:", error);
-    return NextResponse.json(
-      { success: false, error: error.message || "Failed to fetch map objects" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to fetch map objects";
+    console.warn("GET /api/map error, serving seed fallback data:", message);
+
+    const fallback = SEED_CAMPUS_MAP_OBJECTS.map((o, idx) => ({
+      ...o,
+      _id: `fallback-map-obj-${idx}`,
+    }));
+
+    return NextResponse.json({
+      success: true,
+      count: fallback.length,
+      data: fallback,
+    });
   }
 }
 
@@ -81,10 +103,11 @@ export async function POST(req: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
-    console.error("POST /api/map error:", error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to create map object";
+    console.error("POST /api/map error:", message);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to create map object" },
+      { success: false, error: message },
       { status: 500 }
     );
   }

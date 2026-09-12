@@ -1,42 +1,48 @@
+"use client";
+
 import Link from "next/link";
-import { Compass, ShieldCheck, Map } from "lucide-react";
+import { Navigation, Shield, Map, Building2 } from "lucide-react";
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-30 w-full bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 lg:px-8 py-3">
+    <header className="sticky top-0 z-30 w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-white px-4 lg:px-8 py-3 shadow-md">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 to-sky-500 text-white flex items-center justify-center shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
-            <Compass className="w-5 h-5 animate-pulse" />
+        {/* Brand Logo & College Name */}
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/30 group-hover:bg-blue-500 transition-all">
+            <Navigation className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
-              SNS Campus Navigator
-              <span className="text-[10px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
-                MVP
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-extrabold tracking-tight text-white group-hover:text-sky-300 transition-colors">
+                SNS Campus Navigator
+              </h1>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/20 text-sky-300 border border-blue-400/30">
+                AI Block
               </span>
-            </h1>
-            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-              SNS College of Engineering, Coimbatore
+            </div>
+            <p className="text-[11px] font-medium text-slate-400">
+              SNS College of Engineering • Campus Wayfinding
             </p>
           </div>
         </Link>
 
+        {/* Action Links */}
         <div className="flex items-center gap-2.5">
           <Link
             href="/admin/map"
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 transition-all shadow-xs"
           >
-            <Map className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span>Map Editor</span>
+            <Map className="w-3.5 h-3.5 text-sky-400" />
+            <span className="hidden sm:inline">Map Editor</span>
           </Link>
 
           <Link
             href="/admin"
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-md shadow-blue-600/20"
           >
-            <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span>Admin</span>
+            <Shield className="w-3.5 h-3.5 text-blue-200" />
+            <span>Admin Portal</span>
           </Link>
         </div>
       </div>

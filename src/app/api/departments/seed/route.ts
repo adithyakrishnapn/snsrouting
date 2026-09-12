@@ -1,25 +1,29 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import Department from "@/models/Department";
+import CampusMapObject from "@/models/CampusMapObject";
 import { SEED_DEPARTMENTS } from "@/lib/seedData";
+import { SEED_CAMPUS_MAP_OBJECTS } from "@/lib/seedMapObjects";
 
 export async function POST() {
   try {
     await dbConnect();
 
-    // Check if database already has departments
-    const count = await Department.countDocuments();
-    if (count > 0) {
-      // Re-seed: delete existing and re-insert
-      await Department.deleteMany({});
-    }
+    // Re-seed departments
+    await Department.deleteMany({});
+    const createdDepts = await Department.insertMany(SEED_DEPARTMENTS);
 
-    const created = await Department.insertMany(SEED_DEPARTMENTS);
+    // Re-seed campus map objects (building polygons, paths, markers)
+    await CampusMapObject.deleteMany({});
+    const createdMapObjects = await CampusMapObject.insertMany(SEED_CAMPUS_MAP_OBJECTS);
 
     return NextResponse.json({
       success: true,
-      message: `Successfully seeded ${created.length} placeholder departments.`,
-      data: created,
+      message: `Successfully seeded ${createdDepts.length} departments and ${createdMapObjects.length} campus map objects.`,
+      data: {
+        departments: createdDepts,
+        mapObjects: createdMapObjects,
+      },
     });
   } catch (error: any) {
     console.error("Error seeding database:", error);

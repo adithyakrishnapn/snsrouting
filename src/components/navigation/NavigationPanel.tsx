@@ -54,6 +54,20 @@ export function NavigationPanel({
             <span>{department.buildingName}</span>
           </div>
         </div>
+
+        {/* Classroom Door Photo Preview */}
+        {department.images && department.images.length > 0 && (
+          <div className="relative w-20 h-28 rounded-xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 shadow-md shrink-0">
+            <img
+              src={department.images[0]}
+              alt={`Classroom ${department.roomNumber}`}
+              className="w-full h-full object-cover"
+            />
+            <span className="absolute bottom-1 left-1 right-1 bg-black/75 backdrop-blur-xs text-[9px] font-bold text-white text-center py-0.5 rounded">
+              {department.roomNumber}
+            </span>
+          </div>
+        )}
       </div>
 
       <hr className="border-slate-100 dark:border-slate-800" />

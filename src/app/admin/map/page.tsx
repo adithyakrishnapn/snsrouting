@@ -162,7 +162,7 @@ export default function AdminMapPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-            <Sparkles className="w-4 h-4" />
+            <MapPin className="w-4 h-4" />
             <span>Campus Map Management</span>
           </div>
           <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">

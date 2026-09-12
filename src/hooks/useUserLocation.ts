@@ -5,8 +5,8 @@ import { UserLocationState } from "@/types/navigation";
 
 // Default SNS College of Engineering, Coimbatore Main Entrance coordinates
 export const SNS_CAMPUS_GATE = {
-  latitude: 11.101850,
-  longitude: 77.025400,
+  latitude: 11.103250,
+  longitude: 77.027300,
 };
 
 export function useUserLocation() {
@@ -121,7 +121,10 @@ export function useUserLocation() {
 
   // Request location on mount
   useEffect(() => {
-    requestLocation();
+    const timer = setTimeout(() => {
+      requestLocation();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [requestLocation]);
 
   return {
