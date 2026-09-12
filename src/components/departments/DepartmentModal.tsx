@@ -1,7 +1,7 @@
 "use client";
 
 import { IDepartment } from "@/types/department";
-import { X, Search, Compass, MapPin, Sparkles, Building2 } from "lucide-react";
+import { X, Search, Compass, MapPin, Building2, Check } from "lucide-react";
 import { useState } from "react";
 
 interface DepartmentModalProps {
@@ -30,49 +30,52 @@ export function DepartmentModal({
       d.name.toLowerCase().includes(q) ||
       d.shortName.toLowerCase().includes(q) ||
       d.buildingName.toLowerCase().includes(q) ||
-      d.roomNumber.toLowerCase().includes(q)
+      d.roomNumber.toLowerCase().includes(q) ||
+      d.floor.toLowerCase().includes(q)
     );
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Modal Header */}
-        <div className="p-5 bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white flex items-center justify-between shrink-0">
-          <div>
-            <div className="flex items-center gap-1.5 text-xs font-bold text-sky-400 uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>SNS Campus Navigator</span>
+        <div className="p-5 bg-slate-950 border-b border-slate-800 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center shrink-0">
+              <Compass className="w-5 h-5" />
             </div>
-            <h2 className="text-lg font-extrabold mt-0.5">Select Destination Department</h2>
-            <p className="text-xs text-slate-300">Choose a department to start outdoor map route & indoor guide.</p>
+            <div>
+              <h2 className="text-base font-extrabold text-white">Select Destination Classroom</h2>
+              <p className="text-xs text-slate-400">Choose a classroom to calculate route & indoor directions</p>
+            </div>
           </div>
+
           <button
             onClick={onClose}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all shrink-0"
+            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition-all"
             title="Close modal"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Search Input */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/50 shrink-0">
+        <div className="p-4 border-b border-slate-800 bg-slate-900/50 shrink-0">
           <div className="relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
-              placeholder="Search CSE, ECE, Mechanical, Room 204..."
-              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+              placeholder="Search IA042, 1st EEE-A, IA028, 2nd Floor..."
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-medium text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               autoFocus
             />
           </div>
         </div>
 
-        {/* Department Options Grid */}
-        <div className="p-4 overflow-y-auto space-y-3 flex-1">
+        {/* Classroom List Options */}
+        <div className="p-4 overflow-y-auto space-y-2.5 flex-1">
           {filtered.map((dept) => {
             const isSelected = selectedDepartment?.slug === dept.slug;
             return (
@@ -82,46 +85,54 @@ export function DepartmentModal({
                   onSelectDepartment(dept);
                   onClose();
                 }}
-                className={`w-full text-left p-4 rounded-2xl border transition-all flex items-start justify-between gap-3 ${
+                className={`w-full text-left p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
                   isSelected
-                    ? "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border-blue-500 shadow-md ring-2 ring-blue-500/20"
-                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-slate-50 dark:hover:bg-slate-850"
+                    ? "bg-blue-600/15 border-blue-500 shadow-md ring-1 ring-blue-500/30"
+                    : "bg-slate-950/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-800/50"
                 }`}
               >
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded-lg bg-blue-600 text-white font-extrabold text-xs">
-                      {dept.shortName}
-                    </span>
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                      <Building2 className="w-3 h-3 text-blue-500" />
-                      {dept.buildingName}
-                    </span>
-                  </div>
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  {/* Classroom Door Photo Thumbnail */}
+                  {dept.images && dept.images.length > 0 && (
+                    <div className="relative w-12 h-14 rounded-lg overflow-hidden border border-slate-700 shrink-0 shadow-sm">
+                      <img
+                        src={dept.images[0]}
+                        alt={`Room ${dept.roomNumber}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
 
-                  <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
-                    {dept.name}
-                  </h3>
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2 py-0.5 rounded-md bg-blue-600 text-white font-extrabold text-[11px]">
+                        {dept.shortName}
+                      </span>
+                      <span className="text-[11px] font-bold text-slate-300">
+                        {dept.floor} • Room {dept.roomNumber}
+                      </span>
+                    </div>
 
-                  <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-slate-600 dark:text-slate-400">
-                    <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-medium">
-                      🏢 {dept.floor}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-medium">
-                      📌 {dept.roomNumber}
-                    </span>
+                    <h3 className="text-xs font-bold text-white truncate">
+                      {dept.name}
+                    </h3>
+
+                    <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                      <Building2 className="w-3 h-3 text-slate-500 shrink-0" />
+                      <span className="truncate">{dept.buildingName}</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="shrink-0 flex items-center justify-center pt-1">
+                <div className="shrink-0 flex items-center justify-center">
                   <div
-                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
                       isSelected
                         ? "bg-blue-600 text-white"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:text-blue-600"
+                        : "bg-slate-800 text-slate-400 group-hover:text-white"
                     }`}
                   >
-                    <Compass className="w-4 h-4" />
+                    {isSelected ? <Check className="w-4 h-4" /> : <Compass className="w-3.5 h-3.5" />}
                   </div>
                 </div>
               </button>
@@ -129,19 +140,19 @@ export function DepartmentModal({
           })}
 
           {filtered.length === 0 && (
-            <div className="py-10 text-center text-xs text-slate-500">
-              No departments matching &quot;{filterQuery}&quot; found.
+            <div className="py-8 text-center text-xs text-slate-500">
+              No classrooms matching &quot;{filterQuery}&quot; found.
             </div>
           )}
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 flex justify-end shrink-0">
+        <div className="p-3.5 border-t border-slate-800 bg-slate-950 flex justify-end shrink-0">
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-800 dark:text-slate-200 font-bold text-xs transition-all"
+            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all"
           >
-            Cancel
+            Done
           </button>
         </div>
       </div>

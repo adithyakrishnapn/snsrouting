@@ -65,4 +65,21 @@ export const SEED_CAMPUS_MAP_OBJECTS: Partial<ICampusMapObject>[] = [
     location: { latitude: 11.103263, longitude: 77.027319 },
     isActive: true,
   },
+
+  // 4. Main Active Campus Walkway (Main Gate -> Uzhiyum Nanum -> Food Court -> AI Campus Block)
+  {
+    type: "path",
+    name: "Main Campus Walkway (via Uzhiyum Nanum & Food Court)",
+    pathType: "road",
+    coordinates: [
+      { latitude: 11.100780, longitude: 77.025960 },
+      { latitude: 11.100650, longitude: 77.026550 },
+      { latitude: 11.100750, longitude: 77.027150 },
+      { latitude: 11.100750, longitude: 77.027520 },
+      { latitude: 11.102200, longitude: 77.027520 },
+      { latitude: 11.103250, longitude: 77.027300 },
+    ],
+    isActive: true,
+  },
 ];
+

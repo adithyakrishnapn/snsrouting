@@ -47,6 +47,8 @@ export default function StudentNavigatorPage() {
     isDemoLocation,
     requestLocation,
     setCampusDemoLocation,
+    setAICampusLocation,
+    setCustomLocation,
   } = useUserLocation();
 
   // Fetch departments from API
@@ -254,10 +256,11 @@ export default function StudentNavigatorPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Column: Search, Dept Selection & Directions (Lg: 5 cols) */}
           <div className="lg:col-span-5 space-y-6 order-2 lg:order-1">
-            {/* Locate Me GPS & Campus Demo Button */}
+            {/* Locate Me GPS & Campus Start Point Controls */}
             <LocationButton
               onLocate={requestLocation}
               onSetDemoLocation={setCampusDemoLocation}
+              onSetAICampusLocation={setAICampusLocation}
               loading={loadingLocation}
               error={locationError}
               hasLocation={!!(latitude && longitude)}

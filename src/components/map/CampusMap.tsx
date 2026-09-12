@@ -40,16 +40,17 @@ const createLabelIcon = (name: string) => {
   return L.divIcon({
     className: "building-label-divicon",
     html: `
-      <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-900/90 text-white border border-slate-700 shadow-sm backdrop-blur-xs">
-        🏢 ${name}
+      <div class="px-2.5 py-1 rounded-lg text-[11px] font-extrabold uppercase tracking-wider bg-slate-900/95 text-white border border-slate-700 shadow-md backdrop-blur-md flex items-center gap-1">
+        <span>🏢</span>
+        <span>${name}</span>
       </div>
     `,
-    iconSize: [90, 20],
-    iconAnchor: [45, 10],
+    iconSize: [110, 24],
+    iconAnchor: [55, 12],
   });
 };
 
-const DEFAULT_CENTER: [number, number] = [11.1033, 77.0273]; // Centered on AI Campus Block
+const DEFAULT_CENTER: [number, number] = [11.1021, 77.0265]; // Centered to frame both MAIN GATE and AI Campus Block
 
 export const TILE_SOURCES = {
   osm: {
@@ -98,11 +99,11 @@ export default function CampusMap({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800 ${className}`}
+      className={`relative overflow-hidden rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 ${className}`}
     >
       <MapContainer
         center={initialCenter}
-        zoom={17}
+        zoom={17.5}
         scrollWheelZoom={true}
         className="w-full h-full z-0"
         style={{ height: "100%", width: "100%" }}
@@ -118,11 +119,11 @@ export default function CampusMap({
         {selectedDepartment && !routeData && (
           <MapRecenter
             center={[selectedDepartment.location.latitude, selectedDepartment.location.longitude]}
-            zoom={18}
+            zoom={18.5}
           />
         )}
 
-        {/* 1. Custom Campus Roads, Walking Paths & Footpaths (Layered Rendering) */}
+        {/* 1. Custom Campus Roads, Walking Paths & Footpaths */}
         {campusPaths.map((p) => {
           const pType = (p.pathType as PathType) || "walkway";
           return (
@@ -190,8 +191,8 @@ export default function CampusMap({
         )}
       </MapContainer>
 
-      {/* Floating Map Tile Provider Selector (Top-Right) */}
-      <div className="absolute top-3 right-3 z-[400] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-1.5 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 flex items-center gap-1">
+      {/* Floating Map Layer Switcher (Top-Right Pill Bar) */}
+      <div className="absolute top-3 right-3 z-[400] bg-slate-900/90 text-white backdrop-blur-md p-1.5 rounded-2xl shadow-xl border border-slate-800 flex items-center gap-1 max-w-[calc(100%-2rem)] overflow-x-auto">
         {(Object.keys(TILE_SOURCES) as Array<keyof typeof TILE_SOURCES>).map((key) => {
           const item = TILE_SOURCES[key];
           const Icon = item.icon;
@@ -200,12 +201,11 @@ export default function CampusMap({
             <button
               key={key}
               onClick={() => setActiveTileSource(key)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all whitespace-nowrap ${
                 isActive
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
               }`}
-
             >
               <Icon className="w-3.5 h-3.5" />
               <span>{item.name}</span>
@@ -214,27 +214,17 @@ export default function CampusMap({
         })}
       </div>
 
-      {/* Map Attribution / Legend badge */}
-      <div className="absolute bottom-3 left-3 z-[400] bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg text-[11px] font-medium text-slate-700 dark:text-slate-300 shadow-md border border-slate-200 dark:border-slate-800 flex items-center gap-3 flex-wrap">
-        <span className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block"></span> You
+      {/* Map Legend Badge (Bottom-Left Bar) */}
+      <div className="absolute bottom-3 left-3 z-[400] bg-slate-900/90 text-white backdrop-blur-md px-3 py-2 rounded-2xl text-[11px] font-semibold shadow-xl border border-slate-800 flex items-center gap-3.5 flex-wrap">
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block shadow-sm"></span> You
         </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block"></span> Entrance
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shadow-sm"></span> Entrance
         </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block"></span> Room
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block shadow-sm"></span> Classroom
         </span>
-        {buildings.length > 0 && (
-          <span className="flex items-center gap-1 font-bold text-slate-800 dark:text-slate-200">
-            🏢 Blocks ({buildings.length})
-          </span>
-        )}
-        {campusPaths.length > 0 && (
-          <span className="flex items-center gap-1 font-bold text-slate-800 dark:text-slate-200">
-            🛣️ Roads/Paths ({campusPaths.length})
-          </span>
-        )}
       </div>
     </div>
   );

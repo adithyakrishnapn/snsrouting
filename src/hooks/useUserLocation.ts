@@ -1,24 +1,31 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { UserLocationState } from "@/types/navigation";
 
-// Default SNS College of Engineering, Coimbatore Main Entrance coordinates
+// Exact OpenStreetMap MAIN GATE node coordinates near SNS Clinic & Technology Campus
 export const SNS_CAMPUS_GATE = {
-  latitude: 11.103250,
-  longitude: 77.027300,
+  latitude: 11.100776,
+  longitude: 77.025960,
+};
+
+export const AI_CAMPUS_ENTRANCE = {
+  latitude: 11.103462,
+  longitude: 77.027298,
 };
 
 export function useUserLocation() {
   const [state, setState] = useState<UserLocationState>({
-    latitude: null,
-    longitude: null,
-    accuracy: null,
+    latitude: SNS_CAMPUS_GATE.latitude,
+    longitude: SNS_CAMPUS_GATE.longitude,
+    accuracy: 10,
     loading: false,
     error: null,
   });
-  const [isDemoLocation, setIsDemoLocation] = useState<boolean>(false);
+  const [isDemoLocation, setIsDemoLocation] = useState<boolean>(true);
+  const isManuallyPinnedRef = useRef<boolean>(true);
 
+  // Single stable GPS location request without continuous jumping
   const requestLocation = useCallback(() => {
     if (typeof window === "undefined" || !navigator.geolocation) {
       setState({
@@ -26,92 +33,91 @@ export function useUserLocation() {
         longitude: SNS_CAMPUS_GATE.longitude,
         accuracy: 10,
         loading: false,
-        error: "Geolocation is not supported by your browser. Defaulting to SNS Main Campus Entrance.",
+        error: "GPS unavailable. Starting at SNS Main Gate.",
       });
       setIsDemoLocation(true);
+      isManuallyPinnedRef.current = true;
       return;
     }
 
     setState((prev) => ({ ...prev, loading: true, error: null }));
+    isManuallyPinnedRef.current = false;
 
     const options: PositionOptions = {
       enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0,
+      timeout: 8000,
+      maximumAge: 5000,
     };
 
     const handleSuccess = (position: GeolocationPosition) => {
-      const { latitude, longitude, accuracy } = position.coords;
-      let warningMessage: string | null = null;
+      // Ignore if user has manually set a start point
+      if (isManuallyPinnedRef.current) return;
 
-      // Check distance from SNS Campus (~11.1018, 77.0254)
+      const { latitude, longitude, accuracy } = position.coords;
+
+      // Check distance from SNS Campus Main Gate
       const distFromCampus = Math.sqrt(
         Math.pow(latitude - SNS_CAMPUS_GATE.latitude, 2) +
           Math.pow(longitude - SNS_CAMPUS_GATE.longitude, 2)
       );
 
-      // If user is more than ~0.05 degrees away (approx > 5km, e.g. PC ISP location)
-      if (distFromCampus > 0.05) {
-        warningMessage = "PC/Browser location is outside SNS Campus. You can switch to SNS Campus Entrance for an accurate campus navigation demo.";
-      } else if (accuracy > 100) {
-        warningMessage = `GPS accuracy is low (±${Math.round(accuracy)}m). Route may have slight variance.`;
+      // If device GPS is outside campus bounds (> 1.5km away e.g. PC ISP IP location or indoor weak fix)
+      if (distFromCampus > 0.015) {
+        setState({
+          latitude: SNS_CAMPUS_GATE.latitude,
+          longitude: SNS_CAMPUS_GATE.longitude,
+          accuracy: 10,
+          loading: false,
+          error:
+            "Device location is outside campus or indoor weak GPS fix. Started at SNS Main Gate.",
+        });
+        setIsDemoLocation(true);
+        isManuallyPinnedRef.current = true;
+      } else {
+        setState({
+          latitude,
+          longitude,
+          accuracy,
+          loading: false,
+          error: accuracy > 80 ? `Indoor GPS weak (±${Math.round(accuracy)}m). Started at nearest point.` : null,
+        });
+        setIsDemoLocation(false);
       }
-
-      setState({
-        latitude,
-        longitude,
-        accuracy,
-        loading: false,
-        error: warningMessage,
-      });
-      setIsDemoLocation(false);
     };
 
     const handleError = (error: GeolocationPositionError) => {
-      let errorMessage = "Unable to retrieve GPS position.";
-
+      let errorMessage = "Unable to retrieve device GPS.";
       switch (error.code) {
         case error.PERMISSION_DENIED:
-          errorMessage =
-            "Location permission denied. Switched to SNS Main Gate demo position.";
+          errorMessage = "GPS permission denied. Starting at SNS Main Gate.";
           break;
         case error.POSITION_UNAVAILABLE:
-          errorMessage = "Location unavailable. Defaulting to SNS Campus Gate.";
+          errorMessage = "GPS position unavailable indoors. Starting at SNS Main Gate.";
           break;
         case error.TIMEOUT:
-          errorMessage = "GPS request timed out. Using campus entrance position.";
+          errorMessage = "GPS request timed out indoors. Starting at SNS Main Gate.";
           break;
       }
 
-      // Fallback to SNS Campus Gate so user can test navigation anytime
       setState({
         latitude: SNS_CAMPUS_GATE.latitude,
         longitude: SNS_CAMPUS_GATE.longitude,
-        accuracy: 15,
+        accuracy: 10,
         loading: false,
         error: errorMessage,
       });
       setIsDemoLocation(true);
+      isManuallyPinnedRef.current = true;
     };
 
     navigator.geolocation.getCurrentPosition(handleSuccess, handleError, options);
   }, []);
 
   const setCampusDemoLocation = useCallback(() => {
+    isManuallyPinnedRef.current = true;
     setState({
       latitude: SNS_CAMPUS_GATE.latitude,
       longitude: SNS_CAMPUS_GATE.longitude,
-      accuracy: 10,
-      loading: false,
-      error: null,
-    });
-    setIsDemoLocation(true);
-  }, []);
-
-  const setCustomLocation = useCallback((lat: number, lng: number) => {
-    setState({
-      latitude: lat,
-      longitude: lng,
       accuracy: 5,
       loading: false,
       error: null,
@@ -119,7 +125,30 @@ export function useUserLocation() {
     setIsDemoLocation(true);
   }, []);
 
-  // Request location on mount
+  const setAICampusLocation = useCallback(() => {
+    isManuallyPinnedRef.current = true;
+    setState({
+      latitude: AI_CAMPUS_ENTRANCE.latitude,
+      longitude: AI_CAMPUS_ENTRANCE.longitude,
+      accuracy: 5,
+      loading: false,
+      error: null,
+    });
+    setIsDemoLocation(true);
+  }, []);
+
+  const setCustomLocation = useCallback((lat: number, lng: number) => {
+    isManuallyPinnedRef.current = true;
+    setState({
+      latitude: Number(lat.toFixed(6)),
+      longitude: Number(lng.toFixed(6)),
+      accuracy: 3,
+      loading: false,
+      error: null,
+    });
+    setIsDemoLocation(true);
+  }, []);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       requestLocation();
@@ -132,7 +161,7 @@ export function useUserLocation() {
     isDemoLocation,
     requestLocation,
     setCampusDemoLocation,
+    setAICampusLocation,
     setCustomLocation,
   };
 }
-
