@@ -17,7 +17,7 @@ export function Header() {
               SNS Campus Navigator
             </h1>
             <p className="text-[11px] font-semibold text-slate-500">
-              SNS College of Engineering
+              SNS College of Technology
             </p>
           </div>
         </Link>

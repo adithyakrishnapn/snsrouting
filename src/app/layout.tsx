@@ -6,19 +6,19 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "SNS Campus Navigator",
-  description: "Find departments and classrooms inside SNS College of Engineering, Coimbatore.",
+  description: "Find departments and classrooms inside SNS College of Technology, Coimbatore.",
   keywords: [
-    "SNS College of Engineering",
+    "SNS College of Technology",
     "Campus Map",
     "Campus Navigation",
     "Coimbatore",
     "Department Finder",
     "Classroom Navigation",
   ],
-  authors: [{ name: "SNS Engineering Team" }],
+  authors: [{ name: "SNS Technology Team" }],
   openGraph: {
     title: "SNS Campus Navigator",
-    description: "Find departments and classrooms inside SNS College of Engineering, Coimbatore.",
+    description: "Find departments and classrooms inside SNS College of Technology, Coimbatore.",
     url: "https://sns-campus-navigator.vercel.app",
     siteName: "SNS Campus Navigator",
     type: "website",

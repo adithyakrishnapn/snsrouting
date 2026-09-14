@@ -104,7 +104,7 @@ export default function StudentHomePage() {
         <section className="text-center space-y-3 py-8 px-4 rounded-3xl bg-white border border-slate-200/80 shadow-xs relative overflow-hidden">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-extrabold uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>SNS College of Engineering</span>
+            <span>SNS College of Technology</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900">

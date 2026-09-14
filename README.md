@@ -1,6 +1,6 @@
 # 📍 SNS Campus Navigator
 
-Production-quality MVP for **SNS College of Engineering, Coimbatore, Tamil Nadu, India**.
+Production-quality MVP for **SNS College of Technology, Coimbatore, Tamil Nadu, India**.
 Helps students quickly locate campus departments, calculate outdoor walking paths to building entrances using live GPS, and follow step-by-step indoor directions to specific classrooms.
 
 ---
@@ -134,4 +134,4 @@ npm start
 ---
 
 ## 📄 License
-MIT License. Developed for SNS College of Engineering, Coimbatore.
+MIT License. Developed for SNS College of Technology, Coimbatore.
