@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { IDepartment, InstructionStep, Coordinate } from "@/types/department";
-import { ICampusMapObject } from "@/types/map";
 import { PickerMode } from "@/components/map/CoordinatePicker";
 import {
   Plus,
@@ -16,9 +15,6 @@ import {
   Loader2,
   Upload,
   MapPin,
-  Building2,
-  DoorOpen,
-  Navigation,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -26,7 +22,7 @@ const CoordinatePicker = dynamic(() => import("@/components/map/CoordinatePicker
   ssr: false,
   loading: () => (
     <div className="h-80 w-full bg-slate-100 dark:bg-slate-900 rounded-2xl flex items-center justify-center text-xs text-slate-500 animate-pulse font-semibold">
-      Loading Leaflet Coordinate Picker...
+      Loading Coordinate Picker...
     </div>
   ),
 });
@@ -40,7 +36,6 @@ export function DepartmentForm({ initialData, isEditing = false }: DepartmentFor
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [mapObjects, setMapObjects] = useState<ICampusMapObject[]>([]);
 
   // Form Fields
   const [name, setName] = useState(initialData?.name || "");
@@ -52,20 +47,15 @@ export function DepartmentForm({ initialData, isEditing = false }: DepartmentFor
   const [roomNumber, setRoomNumber] = useState(initialData?.roomNumber || "");
   const [isActive, setIsActive] = useState(initialData?.isActive ?? true);
 
-  // Linked Map Objects
-  const [buildingId, setBuildingId] = useState<string>(initialData?.buildingId || "");
-  const [entranceId, setEntranceId] = useState<string>(initialData?.entranceId || "");
-  const [classroomId, setClassroomId] = useState<string>(initialData?.classroomId || "");
-
   // Coordinates
   const [buildingLocation, setBuildingLocation] = useState<Coordinate>(
-    initialData?.location || { latitude: 11.101925, longitude: 77.025604 }
+    initialData?.location || { latitude: 11.103333, longitude: 77.02735 }
   );
   const [entranceLocation, setEntranceLocation] = useState<Coordinate>(
-    initialData?.entranceLocation || { latitude: 11.1021, longitude: 77.02545 }
+    initialData?.entranceLocation || { latitude: 11.10325, longitude: 77.0273 }
   );
   const [roomLocation, setRoomLocation] = useState<Coordinate>(
-    initialData?.roomLocation || { latitude: 11.10195, longitude: 77.0257 }
+    initialData?.roomLocation || { latitude: 11.103333, longitude: 77.02735 }
   );
 
   // Instructions
@@ -73,63 +63,10 @@ export function DepartmentForm({ initialData, isEditing = false }: DepartmentFor
     initialData?.instructions && initialData.instructions.length > 0
       ? initialData.instructions
       : [
-          { stepNumber: 1, text: "Enter through main building entrance." },
-          { stepNumber: 2, text: "Take stairwell/elevator to assigned floor." },
+          { stepNumber: 1, text: "Enter through the AI Campus main entrance located on the left side of the building." },
+          { stepNumber: 2, text: "Take the staircase on the right side to the 2nd Floor." },
         ]
   );
-
-  // Fetch map objects for linking dropdowns
-  useEffect(() => {
-    async function fetchMapObjects() {
-      try {
-        const res = await fetch("/api/map?all=true");
-        const data = await res.json();
-        if (data.success && data.data) {
-          setMapObjects(data.data);
-        }
-      } catch (e) {
-        console.error("Failed to fetch map objects for department linking:", e);
-      }
-    }
-    fetchMapObjects();
-  }, []);
-
-  // Handle building link selection
-  const handleSelectBuildingObject = (bId: string) => {
-    setBuildingId(bId);
-    if (!bId) return;
-    const bObj = mapObjects.find((o) => o._id === bId);
-    if (bObj) {
-      if (bObj.name) setBuildingName(bObj.name);
-      if (bObj.labelPosition) {
-        setBuildingLocation(bObj.labelPosition);
-      } else if (bObj.boundary && bObj.boundary.length > 0) {
-        setBuildingLocation(bObj.boundary[0]);
-      }
-    }
-  };
-
-  // Handle entrance link selection
-  const handleSelectEntranceObject = (eId: string) => {
-    setEntranceId(eId);
-    if (!eId) return;
-    const eObj = mapObjects.find((o) => o._id === eId);
-    if (eObj && eObj.location) {
-      setEntranceLocation(eObj.location);
-    }
-  };
-
-  // Handle classroom link selection
-  const handleSelectClassroomObject = (cId: string) => {
-    setClassroomId(cId);
-    if (!cId) return;
-    const cObj = mapObjects.find((o) => o._id === cId);
-    if (cObj) {
-      if (cObj.location) setRoomLocation(cObj.location);
-      if (cObj.floor) setFloor(cObj.floor);
-      if (cObj.roomNumber) setRoomNumber(cObj.roomNumber);
-    }
-  };
 
   // Auto-generate slug from name if empty
   const handleNameChange = (val: string) => {
@@ -218,9 +155,6 @@ export function DepartmentForm({ initialData, isEditing = false }: DepartmentFor
       entranceLocation,
       roomLocation,
       instructions,
-      buildingId: buildingId || undefined,
-      entranceId: entranceId || undefined,
-      classroomId: classroomId || undefined,
     };
 
     try {
@@ -247,10 +181,6 @@ export function DepartmentForm({ initialData, isEditing = false }: DepartmentFor
       setLoading(false);
     }
   };
-
-  const buildings = mapObjects.filter((o) => o.type === "building");
-  const entrances = mapObjects.filter((o) => o.type === "entrance");
-  const classrooms = mapObjects.filter((o) => o.type === "classroom");
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -280,33 +210,33 @@ export function DepartmentForm({ initialData, isEditing = false }: DepartmentFor
       {/* Basic Department Info */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
         <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
-          1. Basic Department Details
+          1. Basic Department & Classroom Details
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              Department Name *
+              Classroom/Department Full Name *
             </label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => handleNameChange(e.target.value)}
-              placeholder="e.g. Computer Science and Engineering"
+              placeholder="e.g. Electrical & Electronics Engineering (Sec A) - 1st Year"
               className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium text-slate-900 dark:text-white"
             />
           </div>
 
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              Short Name / Code *
+              Short Name / Class Code *
             </label>
             <input
               type="text"
               required
               value={shortName}
               onChange={(e) => setShortName(e.target.value)}
-              placeholder="e.g. CSE"
+              placeholder="e.g. 1st EEE-A"
               className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium text-slate-900 dark:text-white"
             />
           </div>
@@ -320,7 +250,7 @@ export function DepartmentForm({ initialData, isEditing = false }: DepartmentFor
               required
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
-              placeholder="computer-science-and-engineering"
+              placeholder="1st-eee-a-ai-campus"
               className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono text-slate-900 dark:text-white"
             />
           </div>
@@ -334,7 +264,7 @@ export function DepartmentForm({ initialData, isEditing = false }: DepartmentFor
               required
               value={buildingName}
               onChange={(e) => setBuildingName(e.target.value)}
-              placeholder="e.g. CSE Block"
+              placeholder="e.g. AI Campus - Innovation Complex"
               className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium text-slate-900 dark:text-white"
             />
           </div>
@@ -362,77 +292,11 @@ export function DepartmentForm({ initialData, isEditing = false }: DepartmentFor
               required
               value={roomNumber}
               onChange={(e) => setRoomNumber(e.target.value)}
-              placeholder="e.g. Room 204"
+              placeholder="e.g. IA042"
               className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium text-slate-900 dark:text-white"
             />
           </div>
         </div>
-
-        {/* Optional Linked Campus Map Objects */}
-        {mapObjects.length > 0 && (
-          <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3 mt-4">
-            <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-              <Building2 className="w-4 h-4 text-blue-600" />
-              <span>Link with Campus Map Editor Objects (Optional)</span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Building Polygon
-                </label>
-                <select
-                  value={buildingId}
-                  onChange={(e) => handleSelectBuildingObject(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl font-medium text-slate-900 dark:text-white"
-                >
-                  <option value="">-- None (Manual coordinates) --</option>
-                  {buildings.map((b) => (
-                    <option key={b._id} value={b._id}>
-                      🏢 {b.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Entrance Marker
-                </label>
-                <select
-                  value={entranceId}
-                  onChange={(e) => handleSelectEntranceObject(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl font-medium text-slate-900 dark:text-white"
-                >
-                  <option value="">-- None (Manual coordinates) --</option>
-                  {entrances.map((ent) => (
-                    <option key={ent._id} value={ent._id}>
-                      🚪 {ent.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Classroom Marker
-                </label>
-                <select
-                  value={classroomId}
-                  onChange={(e) => handleSelectClassroomObject(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl font-medium text-slate-900 dark:text-white"
-                >
-                  <option value="">-- None (Manual coordinates) --</option>
-                  {classrooms.map((cls) => (
-                    <option key={cls._id} value={cls._id}>
-                      📌 {cls.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-        )}
 
         <div className="space-y-1">
           <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -442,7 +306,7 @@ export function DepartmentForm({ initialData, isEditing = false }: DepartmentFor
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
-            placeholder="Brief overview of the department..."
+            placeholder="Brief overview of the classroom..."
             className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium text-slate-900 dark:text-white"
           />
         </div>
@@ -456,21 +320,21 @@ export function DepartmentForm({ initialData, isEditing = false }: DepartmentFor
             className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
           />
           <label htmlFor="isActive" className="text-xs font-bold text-slate-700 dark:text-slate-300">
-            Active Department (Visible to Students)
+            Active Classroom (Visible to Students)
           </label>
         </div>
       </div>
 
-      {/* Coordinate Picker Section */}
+      {/* Coordinate Selector Section (powers Google Maps URL) */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <MapPin className="w-4 h-4 text-emerald-600" />
-              <span>2. Campus Leaflet Coordinate Picker</span>
+              <span>2. Google Maps Destination Coordinates</span>
             </h3>
             <p className="text-xs text-slate-500">
-              Select mode and click on the map to set Building center, Outdoor Entrance, and Classroom visual pin coordinates.
+              Enter or pick classroom coordinates. These latitude/longitude coordinates generate the outdoor Google Maps walking navigation link.
             </p>
           </div>
         </div>
@@ -578,7 +442,7 @@ export function DepartmentForm({ initialData, isEditing = false }: DepartmentFor
           className="flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-lg shadow-blue-600/30 transition-all disabled:opacity-60"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          <span>{isEditing ? "Save Changes" : "Create Department"}</span>
+          <span>{isEditing ? "Save Changes" : "Create Classroom"}</span>
         </button>
       </div>
     </form>

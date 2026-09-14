@@ -14,7 +14,6 @@ import L from "leaflet";
 import { ICampusMapObject, MapObjectType, PathType } from "@/types/map";
 import { Coordinate } from "@/types/department";
 import { LayerVisibility, LayerControlPanel } from "./LayerControlPanel";
-import { RoadPolyline } from "@/components/map/RoadPolyline";
 import {
   Building2,
   MapPin,
@@ -403,14 +402,16 @@ export default function MapEditor({
 
               const isSelected = selectedObject?._id === p._id;
 
+              const polyPositions: [number, number][] = p.coordinates!.map((c) => [c.latitude, c.longitude]);
               return (
-                <RoadPolyline
+                <Polyline
                   key={p._id || p.name}
-                  coordinates={p.coordinates!}
-                  pathType={pType}
-                  name={p.name}
-                  isSelected={isSelected}
-                  onClick={() => onSelectObject(p)}
+                  positions={polyPositions}
+                  eventHandlers={{ click: () => onSelectObject(p) }}
+                  pathOptions={{
+                    color: isSelected ? "#3b82f6" : "#64748b",
+                    weight: isSelected ? 6 : 4,
+                  }}
                 />
               );
             })}

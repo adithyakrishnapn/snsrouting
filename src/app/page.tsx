@@ -1,57 +1,29 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import dynamic from "next/dynamic";
+import Image from "next/image";
 import { Header } from "@/components/ui/header";
-import { DepartmentSearch } from "@/components/departments/DepartmentSearch";
-import { DepartmentCard } from "@/components/departments/DepartmentCard";
-import { DepartmentModal } from "@/components/departments/DepartmentModal";
-import { LocationButton } from "@/components/navigation/LocationButton";
-import { NavigationPanel } from "@/components/navigation/NavigationPanel";
 import { DirectionSteps } from "@/components/navigation/DirectionSteps";
-import { useUserLocation } from "@/hooks/useUserLocation";
 import { IDepartment } from "@/types/department";
-import { RouteInfo } from "@/types/navigation";
-import { ICampusMapObject } from "@/types/map";
 import { SEED_DEPARTMENTS } from "@/lib/seedData";
-import { Sparkles, MapPin, Database, RefreshCw, Compass, Building2 } from "lucide-react";
+import { createGoogleMapsDirectionsUrl } from "@/lib/googleMaps";
+import {
+  Building2,
+  Navigation2,
+  CheckCircle2,
+  ExternalLink,
+  Sparkles,
+  Layers,
+  Info,
+  MapPin,
+} from "lucide-react";
 
-// Dynamically import client-only Leaflet CampusMap to avoid SSR errors
-const CampusMap = dynamic(() => import("@/components/map/CampusMap"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full min-h-[400px] rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-xs text-slate-500 font-semibold animate-pulse">
-      Loading Interactive Campus Map...
-    </div>
-  ),
-});
-
-export default function StudentNavigatorPage() {
+export default function StudentHomePage() {
   const [departments, setDepartments] = useState<IDepartment[]>([]);
-  const [mapObjects, setMapObjects] = useState<ICampusMapObject[]>([]);
   const [loadingDepts, setLoadingDepts] = useState<boolean>(true);
-  const [selectedDepartment, setSelectedDepartment] = useState<IDepartment | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [routeData, setRouteData] = useState<RouteInfo | null>(null);
-  const [loadingRoute, setLoadingRoute] = useState<boolean>(false);
-  const [seeding, setSeeding] = useState<boolean>(false);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [selectedSlug, setSelectedSlug] = useState<string>("1st-eee-a-ai-campus");
 
-  // Browser Geolocation hook with demo campus fallback
-  const {
-    latitude,
-    longitude,
-    accuracy,
-    loading: loadingLocation,
-    error: locationError,
-    isDemoLocation,
-    requestLocation,
-    setCampusDemoLocation,
-    setAICampusLocation,
-    setCustomLocation,
-  } = useUserLocation();
-
-  // Fetch departments from API
+  // Fetch departments from MongoDB API (or use seed data as fallback)
   const fetchDepartments = useCallback(async () => {
     setLoadingDepts(true);
     try {
@@ -60,314 +32,221 @@ export default function StudentNavigatorPage() {
 
       if (json.success && json.data && json.data.length > 0) {
         setDepartments(json.data);
-        if (!selectedDepartment) {
-          setSelectedDepartment(json.data[0]);
-        }
       } else {
         const placeholders = SEED_DEPARTMENTS.map((d, idx) => ({ ...d, _id: `placeholder-${idx}` }));
         setDepartments(placeholders as IDepartment[]);
-        if (!selectedDepartment) {
-          setSelectedDepartment(placeholders[0] as IDepartment);
-        }
       }
     } catch (e) {
-      console.error("Failed to fetch departments from API, using fallback data:", e);
+      console.error("Failed to fetch departments from API, using seed data:", e);
       const placeholders = SEED_DEPARTMENTS.map((d, idx) => ({ ...d, _id: `placeholder-${idx}` }));
       setDepartments(placeholders as IDepartment[]);
-      if (!selectedDepartment) {
-        setSelectedDepartment(placeholders[0] as IDepartment);
-      }
     } finally {
       setLoadingDepts(false);
-    }
-  }, [selectedDepartment]);
-
-  // Fetch campus map objects (Buildings, Paths, Markers)
-  const fetchMapObjects = useCallback(async () => {
-    try {
-      const res = await fetch("/api/map");
-      const json = await res.json();
-      if (json.success && json.data) {
-        setMapObjects(json.data);
-      }
-    } catch (e) {
-      console.error("Failed to fetch map objects:", e);
     }
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
-    const loadInitialData = async () => {
-      if (isMounted) {
-        await fetchDepartments();
-        await fetchMapObjects();
-      }
-    };
-    loadInitialData();
+    fetchDepartments();
+  }, [fetchDepartments]);
 
-    // Auto-open upfront department selection modal on initial load for mobile & desktop UX
-    const hasPrompted = sessionStorage.getItem("sns_dept_prompted");
-    if (!hasPrompted) {
-      setIsModalOpen(true);
-      sessionStorage.setItem("sns_dept_prompted", "true");
-    }
+  // Selected department object
+  const selectedDept = useMemo(() => {
+    return (
+      departments.find((d) => d.slug === selectedSlug || d.shortName === selectedSlug) ||
+      departments[0] ||
+      (SEED_DEPARTMENTS[0] as IDepartment)
+    );
+  }, [departments, selectedSlug]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [fetchDepartments, fetchMapObjects]);
+  // Calculate Google Maps directions URL dynamically from saved classroom location coordinates
+  const googleMapsUrl = useMemo(() => {
+    if (!selectedDept || !selectedDept.location) return null;
+    return createGoogleMapsDirectionsUrl(
+      selectedDept.location.latitude,
+      selectedDept.location.longitude
+    );
+  }, [selectedDept]);
 
-  // Seed database button handler if DB is empty
-  const handleSeedDatabase = async () => {
-    setSeeding(true);
-    try {
-      const res = await fetch("/api/departments/seed", { method: "POST" });
-      const json = await res.json();
-      if (json.success) {
-        await fetchDepartments();
-        await fetchMapObjects();
-      }
-    } catch (e) {
-      console.error("Failed to seed database:", e);
-    } finally {
-      setSeeding(false);
+  // Handle Google Maps navigation click
+  const handleNavigateClick = () => {
+    if (googleMapsUrl) {
+      window.open(googleMapsUrl, "_blank", "noopener,noreferrer");
     }
   };
 
-  // Fetch walking route whenever user location or selected department changes
-  useEffect(() => {
-    if (!latitude || !longitude || !selectedDepartment || !selectedDepartment.entranceLocation) {
-      const timer = setTimeout(() => setRouteData(null), 0);
-      return () => clearTimeout(timer);
-    }
-
-    const getRoute = async () => {
-      setLoadingRoute(true);
-      try {
-        const res = await fetch("/api/directions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            start: { latitude, longitude },
-            end: selectedDepartment.entranceLocation,
-          }),
-        });
-
-        const json = await res.json();
-        if (json.success && json.data) {
-          setRouteData(json.data);
-        } else {
-          setRouteData(null);
-        }
-      } catch (err) {
-        console.error("Error fetching directions:", err);
-        setRouteData(null);
-      } finally {
-        setLoadingRoute(false);
-      }
-    };
-
-    getRoute();
-  }, [latitude, longitude, selectedDepartment]);
-
-  // Filter departments based on search query
-  const filteredDepartments = useMemo(() => {
-    if (!searchQuery.trim()) return departments;
-    const q = searchQuery.toLowerCase().trim();
-    return departments.filter(
-      (dept) =>
-        dept.name.toLowerCase().includes(q) ||
-        dept.shortName.toLowerCase().includes(q) ||
-        dept.buildingName.toLowerCase().includes(q) ||
-        dept.roomNumber.toLowerCase().includes(q) ||
-        dept.floor.toLowerCase().includes(q)
-    );
-  }, [departments, searchQuery]);
-
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans">
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-blue-600 selection:text-white">
       <Header />
 
-      {/* Upfront Department Modal Dialog */}
-      <DepartmentModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        departments={departments}
-        selectedDepartment={selectedDepartment}
-        onSelectDepartment={(dept) => {
-          setSelectedDepartment(dept);
-          setIsModalOpen(false);
-        }}
-      />
-
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 lg:p-8 space-y-6">
-        {/* Professional Campus Hero Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 md:p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 text-white shadow-xl border border-slate-800 relative overflow-hidden">
-          <div className="space-y-1 z-10">
-            <div className="flex items-center gap-2 text-xs font-extrabold text-sky-400 uppercase tracking-widest">
-              <Building2 className="w-4 h-4 text-sky-400" />
-              <span>Campus Navigation & Wayfinding Portal</span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-              SNS College of Engineering (Autonomous)
-            </h2>
-            <p className="text-xs text-slate-300 max-w-xl leading-relaxed">
-              Find 1st Year classrooms in the AI Campus Block, view left/right staircase indoor routes, and track outdoor walking directions.
-            </p>
+      <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+        {/* Hero Section */}
+        <section className="text-center space-y-3 py-8 px-4 rounded-3xl bg-white border border-slate-200/80 shadow-xs relative overflow-hidden">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-extrabold uppercase tracking-wider">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>SNS College of Engineering</span>
           </div>
 
-          <div className="flex items-center gap-2.5 z-10 shrink-0">
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <Compass className="w-4 h-4 text-sky-200" />
-              <span>Select Classroom</span>
-            </button>
-          </div>
-        </div>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900">
+            Find Your Classroom
+          </h2>
 
-        {/* Selected Department Quick Banner on Mobile */}
-        {selectedDepartment && (
-          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm sm:hidden">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-xl bg-blue-600 text-white font-extrabold text-xs">
-                {selectedDepartment.shortName}
-              </span>
-              <div>
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">
-                  {selectedDepartment.name}
-                </h4>
-                <p className="text-[10px] text-slate-500">
-                  {selectedDepartment.buildingName} • {selectedDepartment.roomNumber}
-                </p>
+          <p className="text-xs sm:text-sm text-slate-600 max-w-xl mx-auto leading-relaxed font-medium">
+            Select your classroom and use Google Maps to reach the campus. Once you arrive, follow the step-by-step indoor directions to your room.
+          </p>
+        </section>
+
+        {/* Classroom Selector Pills/Cards */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <Layers className="w-4 h-4 text-blue-600" />
+              <span>Select Classroom ({departments.length || 4})</span>
+            </h3>
+            {loadingDepts && <span className="text-xs text-slate-400 font-medium">Loading...</span>}
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {departments.map((dept) => {
+              const isSelected = selectedDept?.slug === dept.slug || selectedDept?.shortName === dept.shortName;
+              return (
+                <button
+                  key={dept._id || dept.slug}
+                  onClick={() => setSelectedSlug(dept.slug)}
+                  className={`p-4 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between gap-2.5 relative ${
+                    isSelected
+                      ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/20 scale-[1.02]"
+                      : "bg-white hover:bg-slate-100/80 text-slate-800 border-slate-200 shadow-xs"
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className={`text-xs font-black px-2.5 py-0.5 rounded-lg ${isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-700"}`}>
+                      {dept.shortName}
+                    </span>
+                    {isSelected && <CheckCircle2 className="w-4 h-4 text-white" />}
+                  </div>
+
+                  <div>
+                    <h4 className="text-xs font-bold truncate leading-snug">
+                      Room {dept.roomNumber}
+                    </h4>
+                    <p className={`text-[11px] font-medium ${isSelected ? "text-blue-100" : "text-slate-500"}`}>
+                      {dept.floor}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Selected Classroom Main Details & Dual-Step Guidance */}
+        {selectedDept && (
+          <section className="space-y-6">
+            {/* Classroom Info Banner Card */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-xs space-y-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="px-3 py-1 rounded-xl bg-blue-600 text-white font-black text-xs shadow-xs">
+                      {selectedDept.shortName}
+                    </span>
+                    <span className="px-3 py-1 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200">
+                      🏢 {selectedDept.floor} • Room {selectedDept.roomNumber}
+                    </span>
+                  </div>
+
+                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight pt-1">
+                    {selectedDept.name}
+                  </h3>
+
+                  <p className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span>{selectedDept.buildingName}</span>
+                  </p>
+                </div>
+
+                {/* Classroom Existing Photo Preview */}
+                {selectedDept.images && selectedDept.images.length > 0 ? (
+                  <div className="relative w-full md:w-56 h-36 rounded-2xl overflow-hidden border border-slate-200 shadow-sm shrink-0">
+                    <Image
+                      src={selectedDept.images[0]}
+                      alt={`Classroom ${selectedDept.roomNumber}`}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                    <div className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-bold text-white flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-sky-400" />
+                      <span>Classroom Photo</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full md:w-56 h-32 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-xs text-slate-400 font-medium italic shrink-0">
+                    Classroom photo unavailable
+                  </div>
+                )}
               </div>
+
+              {selectedDept.description && (
+                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 text-xs text-slate-700 leading-relaxed font-medium">
+                  {selectedDept.description}
+                </div>
+              )}
             </div>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-bold text-[11px]"
-            >
-              Change
-            </button>
-          </div>
-        )}
 
-        {/* Main Grid: Responsive Desktop Split / Mobile Stack */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Search, Dept Selection & Directions (Lg: 5 cols) */}
-          <div className="lg:col-span-5 space-y-6 order-2 lg:order-1">
-            {/* Locate Me GPS & Campus Start Point Controls */}
-            <LocationButton
-              onLocate={requestLocation}
-              onSetDemoLocation={setCampusDemoLocation}
-              onSetAICampusLocation={setAICampusLocation}
-              loading={loadingLocation}
-              error={locationError}
-              hasLocation={!!(latitude && longitude)}
-              isDemoLocation={isDemoLocation}
-            />
+            {/* STEP 1: GET TO CAMPUS (Google Maps Outdoor Handoff) */}
+            <div className="bg-gradient-to-r from-blue-50 via-sky-50 to-indigo-50 border border-blue-200 rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-blue-700">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px]">1</span>
+                    <span>STEP 1: GET TO CAMPUS</span>
+                  </div>
+                  <h4 className="text-lg font-black text-slate-900">Outdoor Campus Navigation</h4>
+                  <p className="text-xs font-medium text-slate-600">
+                    Google Maps will provide walking directions from your current location directly to the campus building.
+                  </p>
+                </div>
+              </div>
 
-            {/* Search Bar */}
-            <div className="space-y-3">
-              <DepartmentSearch
-                query={searchQuery}
-                onQueryChange={setSearchQuery}
-                onClear={() => setSearchQuery("")}
-              />
-
-              {/* Department Quick Filter Pills */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                {departments.map((dept) => (
+              <div className="pt-2">
+                {googleMapsUrl ? (
                   <button
-                    key={dept._id || dept.slug}
-                    onClick={() => setSelectedDepartment(dept)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap border ${
-                      selectedDepartment?.slug === dept.slug
-                        ? "bg-blue-600 text-white border-blue-600 shadow-md"
-                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100"
-                    }`}
+                    onClick={handleNavigateClick}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm shadow-md shadow-blue-600/20 transition-all duration-200 active:scale-95 group"
                   >
-                    {dept.shortName}
+                    <Navigation2 className="w-5 h-5 text-white fill-white group-hover:rotate-12 transition-transform" />
+                    <span>Navigate with Google Maps</span>
+                    <ExternalLink className="w-4 h-4 text-blue-200" />
                   </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Selected Department Navigation Card */}
-            {selectedDepartment && (
-              <NavigationPanel
-                department={selectedDepartment}
-                routeData={routeData}
-                loadingRoute={loadingRoute}
-                hasUserLocation={!!(latitude && longitude)}
-                onRequestLocation={requestLocation}
-              />
-            )}
-
-            {/* Department List */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                <span>Select Department ({filteredDepartments.length})</span>
-                {loadingDepts && <span className="text-slate-400 font-normal">Loading...</span>}
-              </div>
-
-              <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
-                {filteredDepartments.map((dept) => (
-                  <DepartmentCard
-                    key={dept._id || dept.slug}
-                    department={dept}
-                    isSelected={selectedDepartment?.slug === dept.slug}
-                    onSelect={(d) => setSelectedDepartment(d)}
-                  />
-                ))}
-
-                {filteredDepartments.length === 0 && (
-                  <div className="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-center text-xs text-slate-500">
-                    No departments matching &quot;{searchQuery}&quot; found.
+                ) : (
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800 font-bold flex items-center gap-2">
+                    <Info className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Location not configured for this classroom.</span>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Indoor Step-by-Step Directions */}
-            {selectedDepartment && (
+            {/* STEP 2: FIND YOUR CLASSROOM (Indoor Step Directions) */}
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-emerald-700 px-1">
+                <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">2</span>
+                <span>STEP 2: FIND YOUR CLASSROOM</span>
+              </div>
+              <p className="text-xs font-medium text-slate-600 px-1">
+                Once you reach the campus building, follow the indoor directions below to reach room {selectedDept.roomNumber}.
+              </p>
+
               <DirectionSteps
-                steps={selectedDepartment.instructions}
-                buildingName={selectedDepartment.buildingName}
-                roomNumber={selectedDepartment.roomNumber}
-                floor={selectedDepartment.floor}
-              />
-            )}
-          </div>
-
-          {/* Right Column: Interactive Campus Map (Lg: 7 cols) */}
-          <div className="lg:col-span-7 order-1 lg:order-2 lg:sticky lg:top-20 space-y-3">
-            <div className="flex items-center justify-between px-1">
-              <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-blue-600" />
-                <span>Interactive Campus Map</span>
-              </span>
-              {selectedDepartment && (
-                <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1">
-                  <Building2 className="w-3.5 h-3.5" />
-                  Showing {selectedDepartment.shortName} Block
-                </span>
-              )}
-            </div>
-
-            <div className="h-[420px] sm:h-[550px] lg:h-[650px] w-full">
-              <CampusMap
-                userLocation={
-                  latitude && longitude ? { latitude, longitude, accuracy } : null
-                }
-                departments={departments}
-                selectedDepartment={selectedDepartment}
-                routeData={routeData}
-                mapObjects={mapObjects}
+                steps={selectedDept.instructions}
+                buildingName={selectedDept.buildingName}
+                roomNumber={selectedDept.roomNumber}
+                floor={selectedDept.floor}
               />
             </div>
-          </div>
-        </div>
+          </section>
+        )}
       </main>
     </div>
   );

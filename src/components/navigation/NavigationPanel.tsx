@@ -139,7 +139,7 @@ export function NavigationPanel({
       <div className="p-3 bg-slate-100 dark:bg-slate-800/80 rounded-xl text-[11px] text-slate-700 dark:text-slate-300 flex items-start gap-2 border border-slate-200 dark:border-slate-700">
         <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
         <div>
-          <strong className="text-slate-900 dark:text-white">Outdoor GPS Navigation:</strong> GPS routes bring you to the <strong>Building Entrance</strong>. Scroll down for step-by-step indoor directions to the classroom.
+          <strong className="text-slate-900 dark:text-white">Outdoor route to AI Campus Block:</strong> All outdoor routes bring you directly to the <strong>AI Campus Block Entrance</strong>. Continue inside for step-by-step classroom directions.
         </div>
       </div>
     </div>

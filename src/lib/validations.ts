@@ -12,8 +12,10 @@ export const coordinateSchema = z.object({
 });
 
 export const directionsRequestSchema = z.object({
-  start: coordinateSchema,
-  end: coordinateSchema,
+  start: coordinateSchema.optional(),
+  end: coordinateSchema.optional(),
+  origin: coordinateSchema.optional(),
+  destination: coordinateSchema.optional(),
 });
 
 export const instructionStepSchema = z.object({

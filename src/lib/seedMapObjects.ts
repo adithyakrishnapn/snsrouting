@@ -66,18 +66,19 @@ export const SEED_CAMPUS_MAP_OBJECTS: Partial<ICampusMapObject>[] = [
     isActive: true,
   },
 
-  // 4. Main Active Campus Walkway (Main Gate -> Uzhiyum Nanum -> Food Court -> AI Campus Block)
+  // 4. Main Active Campus Walkway (Main Gate -> Uzhiyum Nanum -> Food Court Junction -> Girls Hostel Front Road -> AI Campus Block)
   {
     type: "path",
-    name: "Main Campus Walkway (via Uzhiyum Nanum & Food Court)",
+    name: "Central Avenue - Girls Hostel Front Road",
     pathType: "road",
     coordinates: [
-      { latitude: 11.100780, longitude: 77.025960 },
+      { latitude: 11.100776, longitude: 77.025960 },
       { latitude: 11.100650, longitude: 77.026550 },
-      { latitude: 11.100750, longitude: 77.027150 },
       { latitude: 11.100750, longitude: 77.027520 },
-      { latitude: 11.102200, longitude: 77.027520 },
+      { latitude: 11.100860, longitude: 77.028012 },
+      { latitude: 11.102459, longitude: 77.028012 },
       { latitude: 11.103250, longitude: 77.027300 },
+      { latitude: 11.103462, longitude: 77.027298 },
     ],
     isActive: true,
   },
