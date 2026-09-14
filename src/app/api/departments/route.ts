@@ -23,12 +23,24 @@ export async function GET(req: NextRequest) {
     await dbConnect();
     const { searchParams } = new URL(req.url);
     const includeInactive = searchParams.get("all") === "true";
+    const forceSeed = searchParams.get("seed") === "true";
 
     const query = includeInactive ? {} : { isActive: true };
     let departments = await Department.find(query).sort({ name: 1 }).lean();
 
-    // Auto-seed if database is empty
-    if (!departments || departments.length === 0) {
+    // Check if database contains outdated legacy MVP departments (e.g. computer-science-and-engineering)
+    const hasLegacyDepts = departments.some(
+      (d) =>
+        d.slug === "computer-science-and-engineering" ||
+        d.slug === "electronics-and-communication-engineering" ||
+        d.shortName === "CSE" ||
+        d.shortName === "ECE"
+    );
+
+    // If database is empty, has legacy departments, or forceSeed is set, auto-migrate to the 4 target classrooms
+    if (!departments || departments.length === 0 || hasLegacyDepts || forceSeed) {
+      console.log("Auto-migrating MongoDB database to 4 target classrooms...");
+      await Department.deleteMany({});
       const created = await Department.insertMany(SEED_DEPARTMENTS);
       departments = created.map((d) => d.toObject());
     }
