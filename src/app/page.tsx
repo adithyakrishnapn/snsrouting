@@ -18,6 +18,22 @@ import {
   MapPin,
 } from "lucide-react";
 
+// Image fallback helper for production resiliency
+function getClassroomImage(dept: IDepartment): string | null {
+  if (dept.images && dept.images.length > 0 && dept.images[0] && dept.images[0].trim() !== "") {
+    return dept.images[0];
+  }
+  const room = (dept.roomNumber || "").toUpperCase();
+  const name = (dept.shortName || "").toUpperCase();
+
+  if (room.includes("IA042") || name.includes("EEE-A")) return "/uploads/ia042.jpg";
+  if (room.includes("IA040") || name.includes("EEE-B")) return "/uploads/ia040.jpg";
+  if (room.includes("IA028") || name.includes("MCT")) return "/uploads/ia028.jpg";
+  if (room.includes("IA014") || name.includes("MMCT")) return "/uploads/ia014.png";
+
+  return null;
+}
+
 export default function StudentHomePage() {
   const [departments, setDepartments] = useState<IDepartment[]>([]);
   const [loadingDepts, setLoadingDepts] = useState<boolean>(true);
@@ -57,6 +73,11 @@ export default function StudentHomePage() {
       (SEED_DEPARTMENTS[0] as IDepartment)
     );
   }, [departments, selectedSlug]);
+
+  // Image URL for selected classroom
+  const classroomImage = useMemo(() => {
+    return selectedDept ? getClassroomImage(selectedDept) : null;
+  }, [selectedDept]);
 
   // Calculate Google Maps directions URL dynamically from saved classroom location coordinates
   const googleMapsUrl = useMemo(() => {
@@ -165,11 +186,11 @@ export default function StudentHomePage() {
                   </p>
                 </div>
 
-                {/* Classroom Existing Photo Preview */}
-                {selectedDept.images && selectedDept.images.length > 0 ? (
+                {/* Classroom Photo Preview */}
+                {classroomImage ? (
                   <div className="relative w-full md:w-56 h-36 rounded-2xl overflow-hidden border border-slate-200 shadow-sm shrink-0">
                     <Image
-                      src={selectedDept.images[0]}
+                      src={classroomImage}
                       alt={`Classroom ${selectedDept.roomNumber}`}
                       fill
                       className="object-cover"
